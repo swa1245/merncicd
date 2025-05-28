@@ -1,10 +1,56 @@
-- name: Show directory structure for debugging
-  run: |
-    echo "Root directory:"
-    ls -la
-    echo "Frontend directory:"
-    ls -la frontend
-    echo "Frontend build directory:"
-    ls -la frontend/build
-    echo "Backend directory:"
-    ls -la backend
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Show directory structure for debugging
+        run: |
+          echo "Root directory:"
+          ls -la
+          echo "Frontend directory:"
+          ls -la frontend
+          echo "Frontend build directory:"
+          ls -la frontend/build
+          echo "Backend directory:"
+          ls -la backend
+
+      - name: Copy backend and built frontend to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: |
+            backend
+            frontend/build
+          target: /home/ubuntu/CICD
+
+      - name: SSH into EC2 and restart app
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/CICD/backend
+            npm install
+            pm2 restart mern-app || pm2 start index.js --name mern-app

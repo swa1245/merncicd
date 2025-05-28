@@ -41,7 +41,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: |
             backend
-            frontend/build
+            frontend/dist
           target: /home/ubuntu/CICD
 
       - name: SSH into EC2 and restart app

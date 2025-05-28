@@ -7,18 +7,31 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Copy files via SSH
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Copy backend and built frontend to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "."
-          target: "~/app"
+          source: |
+            backend/*
+            frontend/dist/*
+          target: /home/ubuntu/CICD
 
       - name: SSH into EC2 and restart app
         uses: appleboy/ssh-action@master
@@ -27,7 +40,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd ~/app
-            npm install --prefix backend
-            npm install --prefix frontend
-            pm2 restart mern-app || pm2 start backend/server.js --name mern-app
+            cd /home/ubuntu/CICD/backend
+            npm install
+            pm2 restart mern-app || pm2 start index.js --name mern-app

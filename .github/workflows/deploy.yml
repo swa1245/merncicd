@@ -28,6 +28,6 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd ~/app
-            npm install --prefix mern-backend
-            npm install --prefix mern-frontend
-            pm2 restart all || pm2 start mern-backend/server.js --name mern-app
+            npm install --prefix backend
+            npm install --prefix frontend
+            pm2 restart mern-app || pm2 start backend/server.js --name mern-app
